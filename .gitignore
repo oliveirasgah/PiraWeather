@@ -3,3 +3,14 @@
 *.duckdb
 *.duckdb.wal
 ruff.toml
+
+# python
+__pycache__/
+
+# ruff
+.ruff_cache/
+
+# dbt
+target/
+dbt_packages/
+logs/
