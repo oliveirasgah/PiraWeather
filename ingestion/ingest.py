@@ -82,6 +82,12 @@ def load_section(
     )
     section.columns = columns
     section = section.reset_index(drop=True)
+
+    # cast all raw data columns to string — type casting happens in silver
+    data_cols = [c for c in section.columns if not c.startswith("_")]
+    for col in data_cols:
+        section[col] = section[col].astype(str).replace("nan", None)
+
     section["_source_year"] = year
     section["_source_url"] = url
     section["_ingested_at"] = datetime.now(UTC).isoformat()
