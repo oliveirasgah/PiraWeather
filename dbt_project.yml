@@ -1,0 +1,25 @@
+name: piraweather
+version: "1.0.0"
+config-version: 2
+
+profile: piraweather
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+
+models:
+  piraweather:
+    bronze:
+      +schema: bronze
+      +materialized: table
+    silver:
+      +schema: silver
+      +materialized: table
+    gold:
+      +schema: gold
+      +materialized: view
+
+vars:
+  first_year: 1997

@@ -1,0 +1,11 @@
+piraweather:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: data/piraweather_dev.duckdb
+      schema: main
+    prod:
+      type: duckdb
+      path: data/piraweather_prod.duckdb
+      schema: main

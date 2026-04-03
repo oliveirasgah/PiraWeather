@@ -1,2 +1,5 @@
 .ipynb_checkpoints/
 .virtual_documents/
+*.duckdb
+*.duckdb.wal
+ruff.toml
