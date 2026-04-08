@@ -1,0 +1,14 @@
+.git/
+exploration/
+__pycache__/
+target/
+logs/
+.ruff_cache/
+api/
+dashboard/
+postgres/
+data/
+*.duckdb
+*.duckdb.wal
+*.pyc
+.env
