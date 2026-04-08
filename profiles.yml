@@ -1,11 +1,30 @@
 piraweather:
-  target: dev
+  target: prod
   outputs:
     dev:
-      type: duckdb
-      path: data/piraweather_dev.duckdb
-      schema: main
+      type: postgres
+      host: localhost
+      port: 5432
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'piraweather') }}"
+      schema: silver
+      threads: 4
     prod:
-      type: duckdb
-      path: data/piraweather_prod.duckdb
-      schema: main
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
+      port: 5432
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'piraweather') }}"
+      schema: silver
+      threads: 4
+    test:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
+      port: 5432
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      dbname: "{{ env_var('POSTGRES_TEST_DB', 'piraweather_test') }}"
+      schema: silver
+      threads: 4

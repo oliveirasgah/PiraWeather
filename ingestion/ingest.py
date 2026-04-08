@@ -1,32 +1,50 @@
 #!/usr/bin/env python3
 """
 Bronze layer ingestion: fetches yearly XLS files from ESALQ and loads
-them as-is into DuckDB (one table per source document).
+them as-is into PostgreSQL using Citus columnar storage (one table per
+source document).
 
 Usage:
-    python ingestion/ingest.py --env dev
-    python ingestion/ingest.py --env prod
-    python ingestion/ingest.py --env dev --year 2024     # single year
-    python ingestion/ingest.py --env dev --force         # re-ingest all years
+    python ingestion/ingest.py [--env dev|prod] [--year N] [--force]
 """
 
 import argparse
+import io
 import re
 import sys
 from datetime import UTC, date, datetime
 
-import duckdb
 import numpy as np
 import pandas as pd
+import psycopg2
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 SOURCE_URL = "http://www.leb.esalq.usp.br/leb/automatica/diario{year}.xls"
 FIRST_YEAR = 1997
 
-DB_PATHS = {
-    "dev": "data/piraweather_dev.duckdb",
-    "prod": "data/piraweather_prod.duckdb",
-}
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_user: str
+    postgres_password: str
+    postgres_db: str = "piraweather"
+
+
+settings = Settings()
+
+
+def _get_conn() -> psycopg2.extensions.connection:
+    return psycopg2.connect(
+        host=settings.postgres_host,
+        port=settings.postgres_port,
+        user=settings.postgres_user,
+        password=settings.postgres_password,
+        dbname=settings.postgres_db,
+    )
 
 
 #
@@ -88,10 +106,27 @@ def load_section(
     for col in data_cols:
         section[col] = section[col].astype(str).replace("nan", None)
 
-    section["_source_year"] = year
+    section["_source_year"] = str(year)
     section["_source_url"] = url
     section["_ingested_at"] = datetime.now(UTC).isoformat()
     return section
+
+
+#
+# Storage
+#
+
+
+def _write_table(cur, table_name: str, df: pd.DataFrame) -> None:
+    """Drop, recreate as columnar, and bulk-load a bronze table via COPY."""
+    full_name = f"bronze.{table_name}"
+    cur.execute(f"DROP TABLE IF EXISTS {full_name}")
+    cols_ddl = ", ".join(f'"{col}" TEXT' for col in df.columns)
+    cur.execute(f"CREATE EXTENSION IF NOT EXISTS citus_columnar; CREATE TABLE {full_name} ({cols_ddl}) USING columnar")
+    buf = io.StringIO()
+    df.to_csv(buf, index=False, header=False)
+    buf.seek(0)
+    cur.copy_expert(f"COPY {full_name} FROM STDIN WITH (FORMAT CSV, NULL '')", buf)
 
 
 #
@@ -100,7 +135,7 @@ def load_section(
 
 
 def ingest_year(
-    con: duckdb.DuckDBPyConnection,
+    con: psycopg2.extensions.connection,
     year: int,
     force: bool,
 ) -> None:
@@ -108,15 +143,14 @@ def ingest_year(
     url = SOURCE_URL.format(year=year)
     tables = ["raw_2016_s1", "raw_2016_s2"] if year == 2016 else [f"raw_{year}"]
 
-    # Incremental: skip completed years that are already loaded
+    # Incremental: skip completed past years that are already loaded
     if not force and year < current_year:
-        existing = {
-            row[0]
-            for row in con.execute(
+        with con.cursor() as cur:
+            cur.execute(
                 "SELECT table_name FROM information_schema.tables "
                 "WHERE table_schema = 'bronze'"
-            ).fetchall()
-        }
+            )
+            existing = {row[0] for row in cur.fetchall()}
         if all(t in existing for t in tables):
             print(f"  {year}: already loaded, skipping")
             return
@@ -130,57 +164,61 @@ def ingest_year(
 
     header_idx = header_row(year)
 
-    if year == 2016:
-        # Section 1 — era-2 format (rows 17 → 6094)
-        section_1 = load_section(
-            data_raw, header_idx=14, row_start=17, row_end=6095, year=year, url=url
-        )
-        con.execute("DROP TABLE IF EXISTS bronze.raw_2016_s1")
-        con.execute("CREATE TABLE bronze.raw_2016_s1 AS SELECT * FROM section_1")
-        print(f"         raw_2016_s1: {len(section_1)} rows")
+    try:
+        with con.cursor() as cur:
+            if year == 2016:
+                # Section 1 — era-2 format (rows 17 → 6094)
+                section_1 = load_section(
+                    data_raw, header_idx=14, row_start=17, row_end=6095, year=year, url=url
+                )
+                _write_table(cur, "raw_2016_s1", section_1)
+                print(f"         raw_2016_s1: {len(section_1)} rows")
 
-        # Section 2 — era-3 format (rows 6102 → end)
-        section_2 = load_section(
-            data_raw, header_idx=6099, row_start=6102, row_end=None, year=year, url=url
-        )
-        con.execute("DROP TABLE IF EXISTS bronze.raw_2016_s2")
-        con.execute("CREATE TABLE bronze.raw_2016_s2 AS SELECT * FROM section_2")
-        print(f"         raw_2016_s2: {len(section_2)} rows")
-    else:
-        dataframe = load_section(
-            data_raw,
-            header_idx=header_idx,
-            row_start=header_idx + 3,
-            row_end=None,
-            year=year,
-            url=url,
-        )
-        table = f"bronze.raw_{year}"
-        con.execute(f"DROP TABLE IF EXISTS {table}")
-        con.execute(f"CREATE TABLE {table} AS SELECT * FROM dataframe")
-        print(f"         raw_{year}: {len(dataframe)} rows")
+                # Section 2 — era-3 format (rows 6102 → end)
+                section_2 = load_section(
+                    data_raw, header_idx=6099, row_start=6102, row_end=None, year=year, url=url
+                )
+                _write_table(cur, "raw_2016_s2", section_2)
+                print(f"         raw_2016_s2: {len(section_2)} rows")
+            else:
+                dataframe = load_section(
+                    data_raw,
+                    header_idx=header_idx,
+                    row_start=header_idx + 3,
+                    row_end=None,
+                    year=year,
+                    url=url,
+                )
+                _write_table(cur, f"raw_{year}", dataframe)
+                print(f"         raw_{year}: {len(dataframe)} rows")
+        con.commit()
+    except Exception as e:
+        con.rollback()
+        print(f"  {year}: DB ERROR — {e}", file=sys.stderr)
 
 
-def ingest(env: str, years: list[int] | None = None, force: bool = False) -> None:
-    db_path = DB_PATHS[env]
-    print(f"Environment : {env}")
-    print(f"Database    : {db_path}")
+def ingest(years: list[int] | None = None, force: bool = False) -> None:
+    print(f"Database    : {settings.postgres_host}/{settings.postgres_db}")
     print(f"Force reload: {force}\n")
 
-    con = duckdb.connect(db_path)
-    con.execute("CREATE SCHEMA IF NOT EXISTS bronze")
-
-    for year in years or range(FIRST_YEAR, date.today().year + 1):
-        ingest_year(con, year, force=force)
-
-    con.close()
+    con = _get_conn()
+    try:
+        for year in years or range(FIRST_YEAR, date.today().year + 1):
+            ingest_year(con, year, force=force)
+    finally:
+        con.close()
     print("\nDone.")
 
 
 # Main execution
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PiraWeather bronze ingestion")
-    parser.add_argument("--env", choices=["dev", "prod"], required=True)
+    parser.add_argument(
+        "--env",
+        choices=["dev", "prod"],
+        default="prod",
+        help="Environment label (passed through by run.sh to select dbt target)",
+    )
     parser.add_argument("--year", type=int, help="Ingest a single year only")
     parser.add_argument(
         "--force", action="store_true", help="Re-ingest already loaded years"
@@ -188,7 +226,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ingest(
-        env=args.env,
         years=[args.year] if args.year else None,
         force=args.force,
     )
