@@ -1,0 +1,27 @@
+# Development overrides — merged automatically by `docker compose up`.
+#
+# Source directories are bind-mounted so code changes take effect without
+# rebuilding images. The API hot-reloads via uvicorn --reload; Streamlit
+# auto-detects changes to the mounted app.py.
+#
+# Production (no overrides):
+#   docker compose -f docker-compose.yml up
+
+services:
+  api:
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./api/main.py:/app/main.py
+
+  dashboard:
+    volumes:
+      - ./dashboard/app.py:/app/app.py
+
+  pipeline:
+    environment:
+      CREATE_TEST_DB: "true"
+    volumes:
+      - ./ingestion:/app/ingestion
+      - ./run.sh:/app/run.sh
+      - ./dbt_project.yml:/app/dbt_project.yml
+      - ./profiles.yml:/app/profiles.yml
