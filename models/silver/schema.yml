@@ -1,0 +1,126 @@
+version: 2
+
+models:
+  - name: measurements
+    description: >
+      Unified silver layer — all eras (1997–present) standardized to the
+      Era 3 column schema (2017+ equipment). Partitioned by TIMESTAMP with
+      one PostgreSQL child partition per calendar year.
+      Equipment era is labelled in the `equipment_era` column.
+    columns:
+      - name: TIMESTAMP
+        description: Date and time of measurement (UTC)
+        tests:
+          - not_null
+
+      - name: equipment_era
+        description: >
+          Schema era of the originating bronze table.
+          Era 1a = 1997–1999, Era 1b = 2000–2002,
+          Era 2 = 2003–2016 (s1), Era 3 = 2016 (s2) – present.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Era 1a', 'Era 1b', 'Era 2', 'Era 3']
+
+      - name: _source_year
+        description: Calendar year of the observation (integer)
+        tests:
+          - not_null
+
+      - name: _source_url
+        description: URL of the source XLS file
+
+      - name: Tar_AVG
+        description: Air temperature average (°C)
+
+      - name: UR_inst
+        description: Relative humidity instantaneous (%)
+
+      - name: Vvento_ms_AVG
+        description: Wind velocity average (m/s)
+
+      - name: Dvento_G
+        description: Wind direction (degrees)
+
+      - name: Qg_AVG
+        description: Global solar radiation average (W/m² or MJ/m²/day)
+
+      - name: PAR_AVG
+        description: Photosynthetically Active Radiation average (µmol/m²/s)
+
+      - name: Rn_Avg
+        description: Net radiation average (W/m²)
+
+      - name: Chuva_mm
+        description: Rainfall (mm)
+
+      - name: Dvento_SD1_WVT
+        description: >
+          Wind direction standard deviation.
+          NULL for Era 1a and Era 1b (not measured).
+
+      - name: BattV_Avg
+        description: >
+          Battery voltage average (power supply monitoring).
+          NULL for Eras 1 and 2.
+
+      - name: Patm_kPa_AVG
+        description: >
+          Atmospheric pressure average (kPa).
+          NULL for Eras 1 and 2.
+
+      - name: rQg_AVG
+        description: >
+          Reflected global radiation average (W/m²).
+          NULL for Eras 1 and 2.
+
+      - name: Qatm_AVG
+        description: >
+          Atmospheric longwave radiation downward average (W/m²).
+          NULL for Eras 1 and 2.
+
+      - name: Qsup_AVG
+        description: >
+          Surface longwave radiation upward average (W/m²).
+          NULL for Eras 1 and 2.
+
+      - name: Boc_AVG
+        description: >
+          Bowen ratio or thermal sensor reading average.
+          NULL for Eras 1 and 2.
+
+      - name: Bol_AVG
+        description: >
+          Thermal/radiation sensor average.
+          NULL for Eras 1 and 2.
+
+      - name: Albedo_Avg
+        description: >
+          Surface albedo (0–1 scale).
+          NULL for Eras 1 and 2.
+
+      - name: QatmC_AVG
+        description: >
+          Corrected atmospheric radiation average (W/m²).
+          NULL for Eras 1 and 2.
+
+      - name: QsupC_AVG
+        description: >
+          Corrected surface radiation average (W/m²).
+          NULL for Eras 1 and 2.
+
+      - name: Vvento_ms_S_WVT
+        description: >
+          Wind velocity scalar average with vector calculation.
+          NULL for Eras 1 and 2.
+
+      - name: Dvento_D1_WVT
+        description: >
+          Wind direction unit vector component.
+          NULL for Eras 1 and 2.
+
+      - name: PainelT
+        description: >
+          Panel temperature (°C) — data logger housing temperature.
+          NULL for Eras 1 and 2.
