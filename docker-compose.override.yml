@@ -18,8 +18,6 @@ services:
       - ./dashboard/app.py:/app/app.py
 
   pipeline:
-    environment:
-      CREATE_TEST_DB: "true"
     volumes:
       - ./ingestion:/app/ingestion
       - ./run.sh:/app/run.sh
