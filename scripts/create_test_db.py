@@ -4,8 +4,8 @@ Create the test database as a snapshot of prod, if it doesn't already exist.
 
 Uses PostgreSQL's CREATE DATABASE ... TEMPLATE which copies both schema and
 data. Because this requires no active connections on the source database, the
-script terminates idle connections on prod and retries once if the first
-attempt fails.
+script terminates all sessions on prod and retries up to 3 times with
+exponential backoff.
 
 Called from entrypoint.sh after the initial pipeline run.
 """
@@ -60,30 +60,35 @@ def main() -> None:
 
 
 def _create_from_template(cur, prod_db: str, test_db: str) -> None:
-    """Attempt CREATE DATABASE TEMPLATE, retrying once after clearing idle connections."""
-    try:
-        cur.execute(f"CREATE DATABASE {test_db} TEMPLATE {prod_db}")
-    except psycopg2.errors.ObjectInUse:
-        # Active connections block TEMPLATE copies — terminate idle ones and retry
-        print(
-            f"  '{prod_db}' has active connections. "
-            "Terminating idle connections and retrying in 3s..."
-        )
-        cur.execute(
-            "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
-            "WHERE datname = %s AND state = 'idle' AND pid <> pg_backend_pid()",
-            (prod_db,),
-        )
-        time.sleep(3)
+    """Attempt CREATE DATABASE TEMPLATE, retrying after clearing connections.
+
+    A TEMPLATE copy requires zero active connections on the source database.
+    We terminate ALL non-backend sessions (idle, active, idle in transaction)
+    so that connection-pooling services (e.g. the API) don't block the copy.
+    """
+    for attempt, wait in enumerate([3, 6, 12], start=1):
         try:
             cur.execute(f"CREATE DATABASE {test_db} TEMPLATE {prod_db}")
+            return
         except psycopg2.errors.ObjectInUse:
-            print(
-                f"WARNING: Could not create '{test_db}' — '{prod_db}' still has active "
-                "connections. Re-run the pipeline or create it manually:\n"
-                f"  docker compose exec postgres psql -U $POSTGRES_USER -c "
-                f"'CREATE DATABASE {test_db} TEMPLATE {prod_db}'"
+            cur.execute(
+                "SELECT COUNT(*), pg_terminate_backend(pid) FROM pg_stat_activity "
+                "WHERE datname = %s AND pid <> pg_backend_pid()",
+                (prod_db,),
             )
+            remaining = cur.fetchone()[0]
+            print(
+                f"  '{prod_db}' has {remaining} active connection(s) "
+                f"(attempt {attempt}/3). Retrying in {wait}s..."
+            )
+            time.sleep(wait)
+
+    print(
+        f"WARNING: Could not create '{test_db}' — '{prod_db}' still has active "
+        "connections after all retries. Create it manually:\n"
+        f"  docker compose exec postgres psql -U $POSTGRES_USER -c "
+        f"'CREATE DATABASE {test_db} TEMPLATE {prod_db}'"
+    )
 
 
 if __name__ == "__main__":
