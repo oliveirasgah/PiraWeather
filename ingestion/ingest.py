@@ -12,6 +12,7 @@ import argparse
 import io
 import re
 import sys
+import unicodedata
 from datetime import UTC, date, datetime
 
 import numpy as np
@@ -65,10 +66,17 @@ def header_row(year: int) -> int:
 
 
 def sanitize_name(column, index: int) -> str:
-    """Convert a raw column header to a valid SQL identifier."""
+    """Convert a raw column header to a valid SQL identifier.
+
+    Accented characters are first normalized to their ASCII equivalents
+    (e.g. 'á' → 'a', 'ã' → 'a') so that 'Horário' becomes 'Horario'
+    rather than 'Hor_rio'.
+    """
     if column is np.nan or str(column).strip() == "nan":
         return f"_col_{index}"
-    sanitized = re.sub(r"[^a-zA-Z0-9]", "_", str(column).strip())
+    nfkd = unicodedata.normalize("NFKD", str(column).strip())
+    ascii_str = nfkd.encode("ascii", "ignore").decode("ascii")
+    sanitized = re.sub(r"[^a-zA-Z0-9]", "_", ascii_str)
     sanitized = re.sub(r"_+", "_", sanitized).strip("_")
     return sanitized or f"_col_{index}"
 

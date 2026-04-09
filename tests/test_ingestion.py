@@ -52,9 +52,18 @@ class TestSanitizeName:
         assert sanitize_name("Wind Speed", 0) == "Wind_Speed"
 
     def test_special_chars_removed(self):
-        # parentheses, degree symbol, slash → underscores, then stripped
+        # parentheses and degree symbol → underscores, then stripped; ° has no ASCII equivalent
         result = sanitize_name("Temp (°C)", 0)
         assert re.search(r"[^a-zA-Z0-9_]", result) is None
+
+    def test_accented_char_normalized_to_ascii(self):
+        assert sanitize_name("Horário", 0) == "Horario"
+
+    def test_multiple_accents_normalized(self):
+        assert sanitize_name("Ação", 0) == "Acao"
+
+    def test_cedilla_normalized(self):
+        assert sanitize_name("Preço", 0) == "Preco"
 
     def test_nan_numpy(self):
         assert sanitize_name(np.nan, 3) == "_col_3"
