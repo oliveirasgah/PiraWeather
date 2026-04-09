@@ -20,6 +20,8 @@ services:
   pipeline:
     volumes:
       - ./ingestion:/app/ingestion
+      - ./models:/app/models
+      - ./macros:/app/macros
       - ./run.sh:/app/run.sh
       - ./dbt_project.yml:/app/dbt_project.yml
       - ./profiles.yml:/app/profiles.yml
