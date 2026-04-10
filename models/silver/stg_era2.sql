@@ -7,7 +7,6 @@
     Precip   → Chuva_mm
     Dir_Ven  → Dvento_G
     Desv_Pad → Dvento_SD1_WVT
-    Rad_Solar → Qg_AVG  (note: may be "Rad__Solar" in some years — verify)
 
   Vento has no duplicate in Era 2 so no positional suffix needed.
   raw_2016_s1 uses Era 2 format (rows before the station upgrade mid-2016).
@@ -22,17 +21,17 @@ with src as (
     select
         '{{ year }}'                                    as _year_str,
         _source_url,
-        cast("Dia"          as numeric)                 as _julian_day,
-        cast("Horas"        as numeric)                 as _hhmm,
-        cast("Tar"          as double precision)        as "Tar_AVG",
-        cast("UR"           as double precision)        as "UR_inst",
-        cast("Vento"        as double precision)        as "Vvento_ms_AVG",
-        cast("Dir_Ven"      as double precision)        as "Dvento_G",
-        cast("Desv_Pad"     as double precision)        as "Dvento_SD1_WVT",
-        cast("Rad_Solar"    as double precision)        as "Qg_AVG",
-        cast("PAR"          as double precision)        as "PAR_AVG",
-        cast("Rad_Liq"      as double precision)        as "Rn_Avg",
-        cast("Precip"       as double precision)        as "Chuva_mm"
+        {{ safe_float('"Dia"') }}                       as _julian_day,
+        {{ safe_float('"Horas"') }}                     as _hhmm,
+        {{ safe_float('"Tar"') }}                       as "Tar_AVG",
+        {{ safe_float('"UR"') }}                        as "UR_inst",
+        {{ safe_float('"Vento"') }}                     as "Vvento_ms_AVG",
+        {{ safe_float('"Dir_Ven"') }}                   as "Dvento_G",
+        {{ safe_float('"Desv_Pad"') }}                  as "Dvento_SD1_WVT",
+        {{ safe_float('"Rad_Solar"') }}                 as "Qg_AVG",
+        {{ safe_float('"PAR"') }}                       as "PAR_AVG",
+        {{ safe_float('"Rad_Liq"') }}                   as "Rn_Avg",
+        {{ safe_float('"Precip"') }}                    as "Chuva_mm"
     from bronze."raw_{{ year }}"
     union all
     {% endfor %}
@@ -40,17 +39,17 @@ with src as (
     select
         '2016'                                          as _year_str,
         _source_url,
-        cast("Dia"          as numeric)                 as _julian_day,
-        cast("Horas"        as numeric)                 as _hhmm,
-        cast("Tar"          as double precision)        as "Tar_AVG",
-        cast("UR"           as double precision)        as "UR_inst",
-        cast("Vento"        as double precision)        as "Vvento_ms_AVG",
-        cast("Dir_Ven"      as double precision)        as "Dvento_G",
-        cast("Desv_Pad"     as double precision)        as "Dvento_SD1_WVT",
-        cast("Rad_Solar"    as double precision)        as "Qg_AVG",
-        cast("PAR"          as double precision)        as "PAR_AVG",
-        cast("Rad_Liq"      as double precision)        as "Rn_Avg",
-        cast("Precip"       as double precision)        as "Chuva_mm"
+        {{ safe_float('"Dia"') }}                       as _julian_day,
+        {{ safe_float('"Horas"') }}                     as _hhmm,
+        {{ safe_float('"Tar"') }}                       as "Tar_AVG",
+        {{ safe_float('"UR"') }}                        as "UR_inst",
+        {{ safe_float('"Vento"') }}                     as "Vvento_ms_AVG",
+        {{ safe_float('"Dir_Ven"') }}                   as "Dvento_G",
+        {{ safe_float('"Desv_Pad"') }}                  as "Dvento_SD1_WVT",
+        {{ safe_float('"Rad_Solar"') }}                 as "Qg_AVG",
+        {{ safe_float('"PAR"') }}                       as "PAR_AVG",
+        {{ safe_float('"Rad_Liq"') }}                   as "Rn_Avg",
+        {{ safe_float('"Precip"') }}                    as "Chuva_mm"
     from bronze."raw_2016_s1"
 )
 
@@ -69,7 +68,6 @@ select
     "Rn_Avg",
     "Chuva_mm",
     "Dvento_SD1_WVT",
-    -- Era 3-only columns: NULL for all Era 2 rows
     null::double precision                              as "BattV_Avg",
     null::double precision                              as "Patm_kPa_AVG",
     null::double precision                              as "rQg_AVG",

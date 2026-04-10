@@ -2,8 +2,7 @@
   stg_era1 — Era 1a (1997–1999) and Era 1b (2000–2002)
   ───────────────────────────────────────────────────────
   Both sub-eras use Julian day + HHMM time to reconstruct TIMESTAMP.
-  After the sanitize_name Unicode-normalization fix, both use "Horario"
-  (the á in Horário is now mapped to a).
+  After the sanitize_name Unicode-normalization fix, both use "Horario".
 
   Sub-era difference: UR appears BEFORE Vento in 1a, AFTER in 1b,
   which changes the positional deduplication suffix on the two Vento columns.
@@ -25,16 +24,16 @@ with era1a as (
     select
         '{{ year }}'                                    as _year_str,
         _source_url,
-        cast("Dia_Juliano"  as numeric)                 as _julian_day,
-        cast("Horario"      as numeric)                 as _hhmm,
-        cast("Tar"          as double precision)        as "Tar_AVG",
-        cast("UR"           as double precision)        as "UR_inst",
-        cast("Vento_4"      as double precision)        as "Vvento_ms_AVG",
-        cast("Vento_5"      as double precision)        as "Dvento_G",
-        cast("Rad_Solar"    as double precision)        as "Qg_AVG",
-        cast("PAR"          as double precision)        as "PAR_AVG",
-        cast("Rad_Liq"      as double precision)        as "Rn_Avg",
-        cast("Chuva"        as double precision)        as "Chuva_mm",
+        {{ safe_float('"Dia_Juliano"') }}               as _julian_day,
+        {{ safe_float('"Horario"') }}                   as _hhmm,
+        {{ safe_float('"Tar"') }}                       as "Tar_AVG",
+        {{ safe_float('"UR"') }}                        as "UR_inst",
+        {{ safe_float('"Vento_4"') }}                   as "Vvento_ms_AVG",
+        {{ safe_float('"Vento_5"') }}                   as "Dvento_G",
+        {{ safe_float('"Rad_Solar"') }}                 as "Qg_AVG",
+        {{ safe_float('"PAR"') }}                       as "PAR_AVG",
+        {{ safe_float('"Rad_Liq"') }}                   as "Rn_Avg",
+        {{ safe_float('"Chuva"') }}                     as "Chuva_mm",
         'Era 1a'                                        as equipment_era
     from bronze."raw_{{ year }}"
     {% if not loop.last %}union all{% endif %}
@@ -47,16 +46,16 @@ era1b as (
     select
         '{{ year }}'                                    as _year_str,
         _source_url,
-        cast("Dia_Juliano"  as numeric)                 as _julian_day,
-        cast("Horario"      as numeric)                 as _hhmm,
-        cast("Tar"          as double precision)        as "Tar_AVG",
-        cast("UR"           as double precision)        as "UR_inst",
-        cast("Vento_3"      as double precision)        as "Vvento_ms_AVG",
-        cast("Vento_4"      as double precision)        as "Dvento_G",
-        cast("Rad_Solar"    as double precision)        as "Qg_AVG",
-        cast("PAR"          as double precision)        as "PAR_AVG",
-        cast("Rad_Liq"      as double precision)        as "Rn_Avg",
-        cast("Chuva"        as double precision)        as "Chuva_mm",
+        {{ safe_float('"Dia_Juliano"') }}               as _julian_day,
+        {{ safe_float('"Horario"') }}                   as _hhmm,
+        {{ safe_float('"Tar"') }}                       as "Tar_AVG",
+        {{ safe_float('"UR"') }}                        as "UR_inst",
+        {{ safe_float('"Vento_3"') }}                   as "Vvento_ms_AVG",
+        {{ safe_float('"Vento_4"') }}                   as "Dvento_G",
+        {{ safe_float('"Rad_Solar"') }}                 as "Qg_AVG",
+        {{ safe_float('"PAR"') }}                       as "PAR_AVG",
+        {{ safe_float('"Rad_Liq"') }}                   as "Rn_Avg",
+        {{ safe_float('"Chuva"') }}                     as "Chuva_mm",
         'Era 1b'                                        as equipment_era
     from bronze."raw_{{ year }}"
     {% if not loop.last %}union all{% endif %}
@@ -83,7 +82,6 @@ select
     "PAR_AVG",
     "Rn_Avg",
     "Chuva_mm",
-    -- Era 3-only columns: NULL for all Era 1 rows
     null::double precision                              as "Dvento_SD1_WVT",
     null::double precision                              as "BattV_Avg",
     null::double precision                              as "Patm_kPa_AVG",
