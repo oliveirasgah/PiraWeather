@@ -21,7 +21,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['Era 1a', 'Era 1b', 'Era 2', 'Era 3']
+              arguments:
+                values: ['Era 1a', 'Era 1b', 'Era 2', 'Era 3']
 
       - name: _source_year
         description: Calendar year of the observation (integer)
