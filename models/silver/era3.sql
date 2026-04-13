@@ -14,7 +14,7 @@
 
   New years are included automatically at compile time via the Jinja loop.
 */
-{{ config(materialized='partitioned_table') }}
+{{ config(materialized='table') }}
 
 {% set era3_start = 2017 %}
 {% set current_year = modules.datetime.date.today().year %}

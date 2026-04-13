@@ -1,8 +1,8 @@
 /*
   Custom dbt materialization: partitioned_table
   ─────────────────────────────────────────────
-  Creates a PostgreSQL PARTITION BY RANGE ("TIMESTAMP") table with one child
-  partition per calendar year (1997 → current_year + 1). On every dbt run it:
+  Creates a PostgreSQL PARTITION BY RANGE (recorded_at) table with one child
+  partition per calendar year (2016 → current_year + 1). On every dbt run it:
     1. Creates the parent table and all year partitions (IF NOT EXISTS — idempotent)
     2. TRUNCATEs the parent (cascades to all children) for a full reload
     3. INSERTs the transformed rows from the model SQL
@@ -19,7 +19,7 @@
   -- 1. Create the partitioned parent table (schema defined here once)
   {% call statement('create_parent') %}
     CREATE TABLE IF NOT EXISTS {{ target_relation }} (
-      "TIMESTAMP"        TIMESTAMPTZ      NOT NULL,
+      recorded_at        TIMESTAMPTZ      NOT NULL,
       equipment_era      TEXT,
       "Tar_AVG"          DOUBLE PRECISION,
       "UR_inst"          DOUBLE PRECISION,
@@ -43,14 +43,13 @@
       "Vvento_ms_S_WVT"  DOUBLE PRECISION,
       "Dvento_D1_WVT"    DOUBLE PRECISION,
       "PainelT"          DOUBLE PRECISION,
-      _source_year       INTEGER,
       _source_url        TEXT
-    ) PARTITION BY RANGE ("TIMESTAMP");
+    ) PARTITION BY RANGE (recorded_at);
   {% endcall %}
 
-  -- 2. Create year partitions from 1997 to current_year + 1 (idempotent)
+  -- 2. Create year partitions from 2016 to current_year + 1 (idempotent)
   {% set current_year = modules.datetime.date.today().year %}
-  {% for year in range(1997, current_year + 2) %}
+  {% for year in range(2016, current_year + 2) %}
     {% call statement('create_partition_' ~ year) %}
       CREATE TABLE IF NOT EXISTS
         {{ target_relation.schema }}.{{ target_relation.identifier }}_{{ year }}
@@ -64,7 +63,7 @@
     TRUNCATE {{ target_relation }};
   {% endcall %}
 
-  {% call statement('insert') %}
+  {% call statement('main') %}
     INSERT INTO {{ target_relation }}
     {{ sql }}
   {% endcall %}
