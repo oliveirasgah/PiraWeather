@@ -50,6 +50,7 @@ FROM bronze."raw_2016_s2"
 WHERE
   "TIMESTAMP" IS NOT NULL
   AND TRIM("TIMESTAMP") NOT IN ('', 'NaN', 'nan', 'None')
+  AND "TIMESTAMP" ~ '^\d{4}-\d{2}-\d{2}'
 
 {% for year in range(era3_start, current_year + 1) %}
 UNION ALL
@@ -83,4 +84,5 @@ FROM bronze."raw_{{ year }}"
 WHERE
   "TIMESTAMP" IS NOT NULL
   AND TRIM("TIMESTAMP") NOT IN ('', 'NaN', 'nan', 'None')
+  AND "TIMESTAMP" ~ '^\d{4}-\d{2}-\d{2}'
 {% endfor %}
