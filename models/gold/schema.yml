@@ -85,3 +85,26 @@ models:
         description: GREATEST((Tmax + Tmin)/2 - base_temp_c, 0).
       - name: gdd_cumulative_year
         description: Running sum of gdd_daily within the calendar year per crop.
+
+  - name: reference_et
+    description: >
+      FAO-56 Penman-Monteith reference evapotranspiration (ET0) plus the
+      daily and 30-day rolling water balance. Inputs assume wind at 2 m and
+      grass reference crop. Pre-Era-3 days are NULL because they lack Rn.
+    columns:
+      - name: obs_date
+        tests:
+          - not_null
+          - unique
+      - name: et0_mm_day
+        description: FAO-56 ET0 in mm/day. NULL for Era 1 / Era 2 (no Rn).
+      - name: precip_mm
+        description: Daily rainfall in mm.
+      - name: water_balance_mm
+        description: precip_mm - et0_mm_day. Positive = surplus, negative = deficit.
+      - name: water_balance_30d_mm
+        description: 30-day rolling sum of water_balance_mm.
+      - name: inputs_complete
+        description: false when Patm fallback (94 kPa) was used; flags Era 1 / Era 2 days.
+        tests:
+          - not_null
