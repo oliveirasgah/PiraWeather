@@ -15,3 +15,18 @@ models:
         description: Number of sub-hourly silver rows aggregated for this day.
         tests:
           - not_null
+
+  - name: daily_climatology
+    description: >
+      30-year normals per day-of-year. For each tracked variable:
+      mean, p10, p50, p90. n_years flags under-sampled DOYs (e.g. Feb 29).
+    columns:
+      - name: doy
+        description: Day-of-year (1..366).
+        tests:
+          - not_null
+          - unique
+      - name: n_years
+        description: Distinct years contributing to this DOY's percentiles.
+        tests:
+          - not_null
