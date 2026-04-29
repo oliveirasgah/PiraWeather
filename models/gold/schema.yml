@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: daily_summary
+    description: >
+      Daily aggregation of silver.weather_data. Min/max/avg/sum per variable
+      plus obs_count for QA. Foundation for all other gold marts.
+    columns:
+      - name: obs_date
+        description: Calendar date in America/Sao_Paulo (the source zone).
+        tests:
+          - not_null
+          - unique
+      - name: obs_count
+        description: Number of sub-hourly silver rows aggregated for this day.
+        tests:
+          - not_null
