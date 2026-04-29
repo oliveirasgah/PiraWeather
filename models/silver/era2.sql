@@ -1,6 +1,6 @@
 -- Era 2 (2003-2015 + raw_2016_s1, pre-upgrade).
 -- Source columns: Dia, Horas, Precip, Dir_Ven, Desv_Pad. Vento has no dedup suffix.
--- Same recorded_at formula as Era 1.
+-- Same recorded_at formula as Era 1; tagged as America/Sao_Paulo.
 {{ config(materialized='ephemeral') }}
 
 WITH src AS (
@@ -39,9 +39,11 @@ WITH src AS (
   FROM bronze."raw_2016_s1"
 )
 SELECT
-  MAKE_TIMESTAMP(CAST(_year_str AS INT), 1, 1, 0, 0, 0)
-  + (_julian_day - 1) * INTERVAL '1 day'
-  + (_hhmm - FLOOR(_hhmm / 100) * 40) * INTERVAL '1 minute' AS recorded_at,
+  (
+    MAKE_TIMESTAMP(CAST(_year_str AS INT), 1, 1, 0, 0, 0)
+    + (_julian_day - 1) * INTERVAL '1 day'
+    + (_hhmm - FLOOR(_hhmm / 100) * 40) * INTERVAL '1 minute'
+  ) AT TIME ZONE 'America/Sao_Paulo' AS recorded_at,
   'Era 2' AS equipment_era,
   "Tar_AVG",
   "UR_inst",

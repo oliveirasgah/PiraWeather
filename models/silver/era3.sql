@@ -2,13 +2,14 @@
 -- Source columns already match the canonical schema; only typed casts needed.
 -- raw_2016_s2 NULLs sensors added after the initial upgrade.
 -- New years auto-included via the Jinja loop.
+-- TIMESTAMP strings are local Piracicaba time; tagged as America/Sao_Paulo.
 {{ config(materialized='ephemeral') }}
 
 {% set era3_start = 2017 %}
 {% set current_year = modules.datetime.date.today().year %}
 
 SELECT
-  CAST("TIMESTAMP" AS TIMESTAMPTZ) AS recorded_at,
+  CAST("TIMESTAMP" AS TIMESTAMP) AT TIME ZONE 'America/Sao_Paulo' AS recorded_at,
   'Era 3' AS equipment_era,
   {{ safe_float('"Tar_AVG"') }} AS "Tar_AVG",
   {{ safe_float('"UR_inst"') }} AS "UR_inst",
@@ -42,7 +43,7 @@ WHERE
 {% for year in range(era3_start, current_year + 1) %}
 UNION ALL
 SELECT
-  CAST("TIMESTAMP" AS TIMESTAMPTZ) AS recorded_at,
+  CAST("TIMESTAMP" AS TIMESTAMP) AT TIME ZONE 'America/Sao_Paulo' AS recorded_at,
   'Era 3' AS equipment_era,
   {{ safe_float('"Tar_AVG"') }} AS "Tar_AVG",
   {{ safe_float('"UR_inst"') }} AS "UR_inst",

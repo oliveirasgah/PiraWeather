@@ -3,6 +3,7 @@
 --   Era 1a: Vento_4 = speed, Vento_5 = direction
 --   Era 1b: Vento_3 = speed, Vento_4 = direction
 -- recorded_at = Jan 1 + (julian_day - 1) days + (HHMM - floor(HHMM/100)*40) minutes
+-- Source timestamps are local Piracicaba time; tagged as America/Sao_Paulo.
 {{ config(materialized='ephemeral') }}
 
 WITH era1a AS (
@@ -55,9 +56,11 @@ combined AS (
   SELECT * FROM era1b
 )
 SELECT
-  MAKE_TIMESTAMP(CAST(_year_str AS INT), 1, 1, 0, 0, 0)
-  + (_julian_day - 1) * INTERVAL '1 day'
-  + (_hhmm - FLOOR(_hhmm / 100) * 40) * INTERVAL '1 minute' AS recorded_at,
+  (
+    MAKE_TIMESTAMP(CAST(_year_str AS INT), 1, 1, 0, 0, 0)
+    + (_julian_day - 1) * INTERVAL '1 day'
+    + (_hhmm - FLOOR(_hhmm / 100) * 40) * INTERVAL '1 minute'
+  ) AT TIME ZONE 'America/Sao_Paulo' AS recorded_at,
   equipment_era,
   "Tar_AVG",
   "UR_inst",
