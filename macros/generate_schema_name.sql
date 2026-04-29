@@ -1,11 +1,5 @@
-/*
-  Override dbt's default schema name generation.
-
-  By default dbt concatenates the target schema with the custom schema
-  (e.g. target=silver + custom=silver → silver_silver). This override makes
-  the custom schema the final schema name when one is set, so models land
-  in the schema declared in dbt_project.yml (bronze / silver / gold).
-*/
+-- Override default schema concatenation: when a custom schema is set on a model
+-- (bronze/silver/gold), use it as the final name instead of {target}_{custom}.
 {% macro generate_schema_name(custom_schema_name, node) -%}
     {%- if custom_schema_name is none -%}
         {{ target.schema }}
