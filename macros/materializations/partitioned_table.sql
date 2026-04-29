@@ -85,6 +85,11 @@
 
   {{ run_hooks(post_hooks) }}
 
+  -- Required: dbt-postgres opens an explicit transaction for the materialization
+  -- (autocommit=False). Without this commit, the TRUNCATE+INSERT rolls back
+  -- when the connection is reused, leaving stale data visible to other sessions.
+  {{ adapter.commit() }}
+
   {{ return({'relations': [target_relation]}) }}
 
 {% endmaterialization %}
