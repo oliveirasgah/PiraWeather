@@ -72,6 +72,14 @@
         PARTITION OF {{ target_relation }}
         FOR VALUES FROM ('{{ year }}-01-01') TO ('{{ year + 1 }}-01-01');
     {% endcall %}
+    -- BRIN: time-series data is naturally clustered by recorded_at (ingest order),
+    -- which is BRIN's sweet spot. Tens of KB per partition; survives TRUNCATE.
+    {% call statement('create_brin_' ~ year) %}
+      CREATE INDEX IF NOT EXISTS
+        {{ target_relation.identifier }}_{{ year }}_recorded_at_brin
+        ON {{ target_relation.schema }}.{{ target_relation.identifier }}_{{ year }}
+        USING brin (recorded_at);
+    {% endcall %}
   {% endfor %}
 
   {% call statement('truncate') %}
