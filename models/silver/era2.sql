@@ -1,19 +1,7 @@
-/*
-  silver.era2 — Era 2 (2003–2015) and raw_2016_s1
-  ──────────────────────────────────────────────────
-  Same recorded_at reconstruction as Era 1 but with different column names:
-    Dia      → julian day
-    Horas    → HHMM time
-    Precip   → Chuva_mm
-    Dir_Ven  → Dvento_G
-    Desv_Pad → Dvento_SD1_WVT
-
-  Vento has no duplicate in Era 2 so no positional suffix needed.
-  raw_2016_s1 uses Era 2 format (rows before the station upgrade mid-2016).
-
-  Dropped columns (no equivalent): F_C_S_, es, ea, Tu, To, DPV, Niv_Tanq, Rad_Epp
-*/
-{{ config(materialized='table') }}
+-- Era 2 (2003-2015 + raw_2016_s1, pre-upgrade).
+-- Source columns: Dia, Horas, Precip, Dir_Ven, Desv_Pad. Vento has no dedup suffix.
+-- Same recorded_at formula as Era 1.
+{{ config(materialized='ephemeral') }}
 
 WITH src AS (
   {% for year in range(2003, 2016) %}
@@ -34,7 +22,6 @@ WITH src AS (
   FROM bronze."raw_{{ year }}"
   UNION ALL
   {% endfor %}
-  -- raw_2016_s1: first section of 2016 file, still in Era 2 format
   SELECT
     '2016' AS _year_str,
     _source_url,
@@ -65,6 +52,19 @@ SELECT
   "Rn_Avg",
   "Chuva_mm",
   "Dvento_SD1_WVT",
+  NULL::DOUBLE PRECISION AS "BattV_Avg",
+  NULL::DOUBLE PRECISION AS "Patm_kPa_AVG",
+  NULL::DOUBLE PRECISION AS "rQg_AVG",
+  NULL::DOUBLE PRECISION AS "Qatm_AVG",
+  NULL::DOUBLE PRECISION AS "Qsup_AVG",
+  NULL::DOUBLE PRECISION AS "Boc_AVG",
+  NULL::DOUBLE PRECISION AS "Bol_AVG",
+  NULL::DOUBLE PRECISION AS "Albedo_Avg",
+  NULL::DOUBLE PRECISION AS "QatmC_AVG",
+  NULL::DOUBLE PRECISION AS "QsupC_AVG",
+  NULL::DOUBLE PRECISION AS "Vvento_ms_S_WVT",
+  NULL::DOUBLE PRECISION AS "Dvento_D1_WVT",
+  NULL::DOUBLE PRECISION AS "PainelT",
   _source_url
 FROM src
 WHERE

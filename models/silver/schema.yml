@@ -1,12 +1,14 @@
 version: 2
 
 models:
-  - name: era1
+  - name: weather_data
     description: >
-      Era 1 meteorological observations (1997–2002).
-      Era 1a (1997–1999) and Era 1b (2000–2002) share the same measurement set;
-      the sub-era label is preserved in equipment_era.
-      Partitioned by recorded_at with one PostgreSQL child partition per calendar year.
+      Unified silver layer table containing all meteorological observations from 1997
+      to present. Combines Era 1 (1997–2002), Era 2 (2003–2016 s1), and Era 3
+      (2016 s2–present) with NULL-filling for columns absent in earlier eras.
+      Materialized as a PostgreSQL PARTITION BY RANGE (recorded_at) table with one
+      child partition per calendar year from 1997 onward.
+      All column names follow Era 3 conventions as the canonical schema.
     columns:
       - name: recorded_at
         description: Date and time of measurement (UTC)
@@ -15,59 +17,13 @@ models:
 
       - name: equipment_era
         description: >
-          Sub-era label. Era 1a = 1997–1999, Era 1b = 2000–2002.
-          Distinguishes the two Vento column layouts in the source XLS files.
+          Equipment era label. One of: 'Era 1a' (1997–1999), 'Era 1b' (2000–2002),
+          'Era 2' (2003–2016 s1), 'Era 3' (2016 s2–present).
         tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ['Era 1a', 'Era 1b']
-
-      - name: Tar_AVG
-        description: Air temperature average (°C)
-
-      - name: UR_inst
-        description: Relative humidity instantaneous (%)
-
-      - name: Vvento_ms_AVG
-        description: Wind velocity average (m/s)
-
-      - name: Dvento_G
-        description: Wind direction (degrees)
-
-      - name: Qg_AVG
-        description: Global solar radiation average (W/m² or MJ/m²/day)
-
-      - name: PAR_AVG
-        description: Photosynthetically Active Radiation average (µmol/m²/s)
-
-      - name: Rn_Avg
-        description: Net radiation average (W/m²)
-
-      - name: Chuva_mm
-        description: Rainfall (mm)
-
-      - name: _source_url
-        description: URL of the source XLS file
-
-  - name: era2
-    description: >
-      Era 2 meteorological observations (2003–2016 s1).
-      Covers raw_2003 through raw_2015 and raw_2016_s1 (pre-upgrade rows).
-      Adds Dvento_SD1_WVT which was not measured in Era 1.
-    columns:
-      - name: recorded_at
-        description: Date and time of measurement (UTC)
-        tests:
-          - not_null
-
-      - name: equipment_era
-        description: Always 'Era 2'.
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['Era 2']
+                values: ['Era 1a', 'Era 1b', 'Era 2', 'Era 3']
 
       - name: Tar_AVG
         description: Air temperature average (°C)
@@ -94,122 +50,72 @@ models:
         description: Rainfall (mm)
 
       - name: Dvento_SD1_WVT
-        description: Wind direction standard deviation (degrees)
-
-      - name: _source_url
-        description: URL of the source XLS file
-
-  - name: era3
-    description: >
-      Era 3 meteorological observations (2016 s2 – present).
-      Covers raw_2016_s2 (post-upgrade) and raw_2017 onward.
-      Full sensor suite; raw_2016_s2 rows have NULL for sensors added after the initial upgrade.
-      Partitioned by recorded_at with one PostgreSQL child partition per calendar year.
-    columns:
-      - name: recorded_at
-        description: Date and time of measurement (UTC)
-        tests:
-          - not_null
-
-      - name: equipment_era
-        description: Always 'Era 3'.
-        tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: ['Era 3']
-
-      - name: Tar_AVG
-        description: Air temperature average (°C)
-
-      - name: UR_inst
-        description: Relative humidity instantaneous (%)
-
-      - name: Vvento_ms_AVG
-        description: Wind velocity average (m/s)
-
-      - name: Dvento_G
-        description: Wind direction (degrees)
-
-      - name: Qg_AVG
-        description: Global solar radiation average (W/m² or MJ/m²/day)
-
-      - name: PAR_AVG
-        description: Photosynthetically Active Radiation average (µmol/m²/s)
-
-      - name: Rn_Avg
-        description: Net radiation average (W/m²)
-
-      - name: Chuva_mm
-        description: Rainfall (mm)
-
-      - name: Dvento_SD1_WVT
-        description: Wind direction standard deviation (degrees)
+        description: Wind direction standard deviation (degrees). NULL for Era 1 rows.
 
       - name: BattV_Avg
         description: >
           Battery voltage average (power supply monitoring).
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: Patm_kPa_AVG
         description: >
           Atmospheric pressure average (kPa).
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: rQg_AVG
         description: >
           Reflected global radiation average (W/m²).
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: Qatm_AVG
         description: >
           Atmospheric longwave radiation downward average (W/m²).
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: Qsup_AVG
         description: >
           Surface longwave radiation upward average (W/m²).
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: Boc_AVG
         description: >
           Bowen ratio or thermal sensor reading average.
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: Bol_AVG
         description: >
           Thermal/radiation sensor average.
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: Albedo_Avg
         description: >
           Surface albedo (0–1 scale).
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: QatmC_AVG
         description: >
           Corrected atmospheric radiation average (W/m²).
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: QsupC_AVG
         description: >
           Corrected surface radiation average (W/m²).
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: Vvento_ms_S_WVT
         description: >
           Wind velocity scalar average with vector calculation.
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: Dvento_D1_WVT
         description: >
           Wind direction unit vector component.
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: PainelT
         description: >
           Panel temperature (°C) — data logger housing temperature.
-          NULL for raw_2016_s2 rows.
+          NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: _source_url
         description: URL of the source XLS file

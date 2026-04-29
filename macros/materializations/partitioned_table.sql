@@ -1,22 +1,39 @@
-/*
-  Custom dbt materialization: partitioned_table
-  ─────────────────────────────────────────────
-  Creates a PostgreSQL PARTITION BY RANGE (recorded_at) table with one child
-  partition per calendar year (2016 → current_year + 1). On every dbt run it:
-    1. Creates the parent table and all year partitions (IF NOT EXISTS — idempotent)
-    2. TRUNCATEs the parent (cascades to all children) for a full reload
-    3. INSERTs the transformed rows from the model SQL
-
-  Usage in a model:
-    {{ config(materialized='partitioned_table') }}
-*/
+-- dbt materialization: PARTITION BY RANGE (recorded_at) parent + yearly children
+-- (1997 to current_year + 1). Full reload: TRUNCATE cascades, then INSERT.
 {% materialization partitioned_table, adapter='postgres' %}
 
   {% set target_relation = this %}
 
+  {% set columns = [
+    'recorded_at',
+    'equipment_era',
+    '"Tar_AVG"',
+    '"UR_inst"',
+    '"Vvento_ms_AVG"',
+    '"Dvento_G"',
+    '"Qg_AVG"',
+    '"PAR_AVG"',
+    '"Rn_Avg"',
+    '"Chuva_mm"',
+    '"Dvento_SD1_WVT"',
+    '"BattV_Avg"',
+    '"Patm_kPa_AVG"',
+    '"rQg_AVG"',
+    '"Qatm_AVG"',
+    '"Qsup_AVG"',
+    '"Boc_AVG"',
+    '"Bol_AVG"',
+    '"Albedo_Avg"',
+    '"QatmC_AVG"',
+    '"QsupC_AVG"',
+    '"Vvento_ms_S_WVT"',
+    '"Dvento_D1_WVT"',
+    '"PainelT"',
+    '_source_url'
+  ] %}
+
   {{ run_hooks(pre_hooks) }}
 
-  -- 1. Create the partitioned parent table (schema defined here once)
   {% call statement('create_parent') %}
     CREATE TABLE IF NOT EXISTS {{ target_relation }} (
       recorded_at        TIMESTAMPTZ      NOT NULL,
@@ -47,9 +64,8 @@
     ) PARTITION BY RANGE (recorded_at);
   {% endcall %}
 
-  -- 2. Create year partitions from 2016 to current_year + 1 (idempotent)
   {% set current_year = modules.datetime.date.today().year %}
-  {% for year in range(2016, current_year + 2) %}
+  {% for year in range(1997, current_year + 2) %}
     {% call statement('create_partition_' ~ year) %}
       CREATE TABLE IF NOT EXISTS
         {{ target_relation.schema }}.{{ target_relation.identifier }}_{{ year }}
@@ -58,13 +74,12 @@
     {% endcall %}
   {% endfor %}
 
-  -- 3. Full reload: truncate all partitions then insert fresh data
   {% call statement('truncate') %}
     TRUNCATE {{ target_relation }};
   {% endcall %}
 
   {% call statement('main') %}
-    INSERT INTO {{ target_relation }}
+    INSERT INTO {{ target_relation }} ({{ columns | join(', ') }})
     {{ sql }}
   {% endcall %}
 

@@ -1,25 +1,12 @@
-/*
-  silver.era3 — Era 3: raw_2016_s2 and 2017–present
-  ───────────────────────────────────────────────────
-  Column names already match the target schema — only TEXT → typed casts needed.
-  The TIMESTAMP column is a parseable string; no reconstruction required.
-
-  raw_2016_s2 is the second half of the 2016 XLS (after the station upgrade).
-  It uses Era 3 column names but predates some sensors added later, so
-  Era-3-only columns that may be absent are set to NULL.
-
-  2017+ tables all have the full Era 3 schema. Each year is listed explicitly
-  (no SELECT *) so that extra columns added to the source XLS over time don't
-  cause UNION column-count mismatches.
-
-  New years are included automatically at compile time via the Jinja loop.
-*/
-{{ config(materialized='table') }}
+-- Era 3 (raw_2016_s2 post-upgrade + 2017-present).
+-- Source columns already match the canonical schema; only typed casts needed.
+-- raw_2016_s2 NULLs sensors added after the initial upgrade.
+-- New years auto-included via the Jinja loop.
+{{ config(materialized='ephemeral') }}
 
 {% set era3_start = 2017 %}
 {% set current_year = modules.datetime.date.today().year %}
 
--- raw_2016_s2: conservative NULL for sensors that may not yet exist
 SELECT
   CAST("TIMESTAMP" AS TIMESTAMPTZ) AS recorded_at,
   'Era 3' AS equipment_era,
