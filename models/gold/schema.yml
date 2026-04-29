@@ -30,3 +30,37 @@ models:
         description: Distinct years contributing to this DOY's percentiles.
         tests:
           - not_null
+
+  - name: extreme_events
+    description: >
+      Top-10 records per category for dashboard headlines. Categories cover
+      both daily aggregations (hottest/coldest/wettest day, driest month)
+      and sub-daily silver records (wettest/windiest hour).
+    columns:
+      - name: category
+        description: Event category.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - hottest_day
+                  - coldest_day
+                  - wettest_day
+                  - wettest_hour
+                  - windiest_hour
+                  - driest_month
+      - name: rank
+        description: 1..10 within category, 1 being most extreme.
+        tests:
+          - not_null
+      - name: event_at
+        description: Event timestamp (date for dailies, hour for sub-daily, month-start for monthly).
+        tests:
+          - not_null
+      - name: value
+        description: Event value in the units indicated by `unit`.
+      - name: unit
+        description: Unit of `value` ('C', 'mm', 'm/s').
+        tests:
+          - not_null
