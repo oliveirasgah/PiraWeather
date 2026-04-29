@@ -64,3 +64,24 @@ models:
         description: Unit of `value` ('C', 'mm', 'm/s').
         tests:
           - not_null
+
+  - name: growing_degree_days
+    description: >
+      Daily Growing Degree Days per crop, plus a year-cumulative window sum.
+      Heat accumulation by crop drives phenology models in agronomy.
+    columns:
+      - name: obs_date
+        tests:
+          - not_null
+      - name: crop
+        description: Crop reference from seeds.crop_base_temperatures.
+        tests:
+          - not_null
+      - name: base_temp_c
+        description: Base temperature below which the crop accumulates no GDD.
+        tests:
+          - not_null
+      - name: gdd_daily
+        description: GREATEST((Tmax + Tmin)/2 - base_temp_c, 0).
+      - name: gdd_cumulative_year
+        description: Running sum of gdd_daily within the calendar year per crop.
