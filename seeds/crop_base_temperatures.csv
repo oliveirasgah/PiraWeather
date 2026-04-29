@@ -1,0 +1,12 @@
+crop,base_temp_c,notes
+sugarcane,18.0,SP mainstay; C4 grass with high thermal threshold
+corn,10.0,USDA standard base
+soybean,10.0,Top BR export crop
+coffee,10.0,Arabica reference; MG/SP/ES belt
+citrus,12.5,Sweet orange; SP dominant globally
+cotton,15.0,Cerrado staple (MT BA)
+rice,10.0,RS supplies ~70% of national crop
+wheat,5.0,Winter crop in PR/RS; lowest base in the set
+sorghum,10.0,Safrinha alternative to corn
+beans,10.0,Cultural staple; multiple growing seasons
+eucalyptus,13.0,Forestry; large area in MG/SP/BA
