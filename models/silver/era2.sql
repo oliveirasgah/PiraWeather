@@ -8,34 +8,34 @@ WITH src AS (
   SELECT
     '{{ year }}' AS _year_str,
     _source_url,
-    {{ safe_float('"Dia"') }} AS _julian_day,
-    {{ safe_float('"Horas"') }} AS _hhmm,
-    {{ safe_float('"Tar"') }} AS "Tar_AVG",
-    {{ safe_float('"UR"') }} AS "UR_inst",
-    {{ safe_float('"Vento"') }} AS "Vvento_ms_AVG",
-    {{ safe_float('"Dir_Ven"') }} AS "Dvento_G",
-    {{ safe_float('"Desv_Pad"') }} AS "Dvento_SD1_WVT",
-    {{ safe_float('"Rad_Solar"') }} AS "Qg_AVG",
-    {{ safe_float('"PAR"') }} AS "PAR_AVG",
-    {{ safe_float('"Rad_Liq"') }} AS "Rn_Avg",
-    {{ safe_float('"Precip"') }} AS "Chuva_mm"
+    {{ bounded_float('"Dia"', 1, 366) }} AS _julian_day,
+    {{ bounded_float('"Horas"', 0, 2400) }} AS _hhmm,
+    {{ bounded_float('"Tar"', -5, 50) }} AS "Tar_AVG",
+    {{ bounded_float('"UR"', 0, 100) }} AS "UR_inst",
+    {{ bounded_float('"Vento"', 0, 60) }} AS "Vvento_ms_AVG",
+    {{ bounded_float('"Dir_Ven"', 0, 360) }} AS "Dvento_G",
+    {{ bounded_float('"Desv_Pad"', 0, 360) }} AS "Dvento_SD1_WVT",
+    {{ bounded_float('"Rad_Solar"', 0, 1500) }} AS "Qg_AVG",
+    {{ bounded_float('"PAR"', 0, 3000) }} AS "PAR_AVG",
+    {{ bounded_float('"Rad_Liq"', -200, 1500) }} AS "Rn_Avg",
+    {{ bounded_float('"Precip"', 0, 200) }} AS "Chuva_mm"
   FROM bronze."raw_{{ year }}"
   UNION ALL
   {% endfor %}
   SELECT
     '2016' AS _year_str,
     _source_url,
-    {{ safe_float('"Dia"') }} AS _julian_day,
-    {{ safe_float('"Horas"') }} AS _hhmm,
-    {{ safe_float('"Tar"') }} AS "Tar_AVG",
-    {{ safe_float('"UR"') }} AS "UR_inst",
-    {{ safe_float('"Vento"') }} AS "Vvento_ms_AVG",
-    {{ safe_float('"Dir_Ven"') }} AS "Dvento_G",
-    {{ safe_float('"Desv_Pad"') }} AS "Dvento_SD1_WVT",
-    {{ safe_float('"Rad_Solar"') }} AS "Qg_AVG",
-    {{ safe_float('"PAR"') }} AS "PAR_AVG",
-    {{ safe_float('"Rad_Liq"') }} AS "Rn_Avg",
-    {{ safe_float('"Precip"') }} AS "Chuva_mm"
+    {{ bounded_float('"Dia"', 1, 366) }} AS _julian_day,
+    {{ bounded_float('"Horas"', 0, 2400) }} AS _hhmm,
+    {{ bounded_float('"Tar"', -5, 50) }} AS "Tar_AVG",
+    {{ bounded_float('"UR"', 0, 100) }} AS "UR_inst",
+    {{ bounded_float('"Vento"', 0, 60) }} AS "Vvento_ms_AVG",
+    {{ bounded_float('"Dir_Ven"', 0, 360) }} AS "Dvento_G",
+    {{ bounded_float('"Desv_Pad"', 0, 360) }} AS "Dvento_SD1_WVT",
+    {{ bounded_float('"Rad_Solar"', 0, 1500) }} AS "Qg_AVG",
+    {{ bounded_float('"PAR"', 0, 3000) }} AS "PAR_AVG",
+    {{ bounded_float('"Rad_Liq"', -200, 1500) }} AS "Rn_Avg",
+    {{ bounded_float('"Precip"', 0, 200) }} AS "Chuva_mm"
   FROM bronze."raw_2016_s1"
 )
 SELECT

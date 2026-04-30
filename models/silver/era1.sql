@@ -11,16 +11,16 @@ WITH era1a AS (
   SELECT
     '{{ year }}' AS _year_str,
     _source_url,
-    {{ safe_float('"Dia_Juliano"') }} AS _julian_day,
-    {{ safe_float('"Horario"') }} AS _hhmm,
-    {{ safe_float('"Tar"') }} AS "Tar_AVG",
-    {{ safe_float('"UR"') }} AS "UR_inst",
-    {{ safe_float('"Vento_4"') }} AS "Vvento_ms_AVG",
-    {{ safe_float('"Vento_5"') }} AS "Dvento_G",
-    {{ safe_float('"Rad_Solar"') }} AS "Qg_AVG",
-    {{ safe_float('"PAR"') }} AS "PAR_AVG",
-    {{ safe_float('"Rad_Liq"') }} AS "Rn_Avg",
-    {{ safe_float('"Chuva"') }} AS "Chuva_mm",
+    {{ bounded_float('"Dia_Juliano"', 1, 366) }} AS _julian_day,
+    {{ bounded_float('"Horario"', 0, 2400) }} AS _hhmm,
+    {{ bounded_float('"Tar"', -5, 50) }} AS "Tar_AVG",
+    {{ bounded_float('"UR"', 0, 100) }} AS "UR_inst",
+    {{ bounded_float('"Vento_4"', 0, 60) }} AS "Vvento_ms_AVG",
+    {{ bounded_float('"Vento_5"', 0, 360) }} AS "Dvento_G",
+    {{ bounded_float('"Rad_Solar"', 0, 1500) }} AS "Qg_AVG",
+    {{ bounded_float('"PAR"', 0, 3000) }} AS "PAR_AVG",
+    {{ bounded_float('"Rad_Liq"', -200, 1500) }} AS "Rn_Avg",
+    {{ bounded_float('"Chuva"', 0, 200) }} AS "Chuva_mm",
     'Era 1a' AS equipment_era
   FROM bronze."raw_{{ year }}"
   {% if not loop.last %}
@@ -33,16 +33,16 @@ era1b AS (
   SELECT
     '{{ year }}' AS _year_str,
     _source_url,
-    {{ safe_float('"Dia_Juliano"') }} AS _julian_day,
-    {{ safe_float('"Horario"') }} AS _hhmm,
-    {{ safe_float('"Tar"') }} AS "Tar_AVG",
-    {{ safe_float('"UR"') }} AS "UR_inst",
-    {{ safe_float('"Vento_3"') }} AS "Vvento_ms_AVG",
-    {{ safe_float('"Vento_4"') }} AS "Dvento_G",
-    {{ safe_float('"Rad_Solar"') }} AS "Qg_AVG",
-    {{ safe_float('"PAR"') }} AS "PAR_AVG",
-    {{ safe_float('"Rad_Liq"') }} AS "Rn_Avg",
-    {{ safe_float('"Chuva"') }} AS "Chuva_mm",
+    {{ bounded_float('"Dia_Juliano"', 1, 366) }} AS _julian_day,
+    {{ bounded_float('"Horario"', 0, 2400) }} AS _hhmm,
+    {{ bounded_float('"Tar"', -5, 50) }} AS "Tar_AVG",
+    {{ bounded_float('"UR"', 0, 100) }} AS "UR_inst",
+    {{ bounded_float('"Vento_3"', 0, 60) }} AS "Vvento_ms_AVG",
+    {{ bounded_float('"Vento_4"', 0, 360) }} AS "Dvento_G",
+    {{ bounded_float('"Rad_Solar"', 0, 1500) }} AS "Qg_AVG",
+    {{ bounded_float('"PAR"', 0, 3000) }} AS "PAR_AVG",
+    {{ bounded_float('"Rad_Liq"', -200, 1500) }} AS "Rn_Avg",
+    {{ bounded_float('"Chuva"', 0, 200) }} AS "Chuva_mm",
     'Era 1b' AS equipment_era
   FROM bronze."raw_{{ year }}"
   {% if not loop.last %}
