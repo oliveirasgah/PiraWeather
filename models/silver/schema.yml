@@ -9,6 +9,33 @@ models:
       Materialized as a PostgreSQL PARTITION BY RANGE (recorded_at) table with one
       child partition per calendar year from 1997 onward.
       All column names follow Era 3 conventions as the canonical schema.
+    tests:
+      # Physical-bounds assertions per numeric column. Bounds match the values
+      # passed to bounded_float() in models/silver/era*.sql — single source of
+      # truth for what's "physically possible" at this station.
+      # NULLs are permitted (predicates short-circuit on NULL); only finite
+      # values are checked. Column names are case-sensitive (created with
+      # double quotes), hence the quoted identifiers.
+      - dbt_utils.expression_is_true:
+          expression: '"Tar_AVG" between -5 and 50'
+      - dbt_utils.expression_is_true:
+          expression: '"UR_inst" between 0 and 100'
+      - dbt_utils.expression_is_true:
+          expression: '"Vvento_ms_AVG" between 0 and 60'
+      - dbt_utils.expression_is_true:
+          expression: '"Dvento_G" between 0 and 360'
+      - dbt_utils.expression_is_true:
+          expression: '"Qg_AVG" between 0 and 1500'
+      - dbt_utils.expression_is_true:
+          expression: '"PAR_AVG" between 0 and 3000'
+      - dbt_utils.expression_is_true:
+          expression: '"Rn_Avg" between -200 and 1500'
+      - dbt_utils.expression_is_true:
+          expression: '"Chuva_mm" between 0 and 200'
+      - dbt_utils.expression_is_true:
+          expression: '"Patm_kPa_AVG" between 90 and 105'
+      - dbt_utils.expression_is_true:
+          expression: '"Albedo_Avg" between 0 and 1'
     columns:
       - name: recorded_at
         description: Date and time of measurement (UTC)
@@ -26,28 +53,28 @@ models:
                 values: ['Era 1a', 'Era 1b', 'Era 2', 'Era 3']
 
       - name: Tar_AVG
-        description: Air temperature average (°C)
+        description: Air temperature average (°C). Range -5..50 enforced via model-level expression_is_true.
 
       - name: UR_inst
-        description: Relative humidity instantaneous (%)
+        description: Relative humidity instantaneous (%). Range 0..100 enforced.
 
       - name: Vvento_ms_AVG
-        description: Wind velocity average (m/s)
+        description: Wind velocity average (m/s). Range 0..60 enforced.
 
       - name: Dvento_G
-        description: Wind direction (degrees)
+        description: Wind direction (degrees). Range 0..360 enforced.
 
       - name: Qg_AVG
-        description: Global solar radiation average (W/m² or MJ/m²/day)
+        description: Global solar radiation average (W/m² or MJ/m²/day). Range 0..1500 enforced.
 
       - name: PAR_AVG
-        description: Photosynthetically Active Radiation average (µmol/m²/s)
+        description: Photosynthetically Active Radiation average (µmol/m²/s). Range 0..3000 enforced.
 
       - name: Rn_Avg
-        description: Net radiation average (W/m²)
+        description: Net radiation average (W/m²). Range -200..1500 enforced.
 
       - name: Chuva_mm
-        description: Rainfall (mm)
+        description: Rainfall (mm). Range 0..200 enforced.
 
       - name: Dvento_SD1_WVT
         description: Wind direction standard deviation (degrees). NULL for Era 1 rows.
@@ -59,7 +86,7 @@ models:
 
       - name: Patm_kPa_AVG
         description: >
-          Atmospheric pressure average (kPa).
+          Atmospheric pressure average (kPa). Range 90..105 enforced.
           NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: rQg_AVG
@@ -89,7 +116,7 @@ models:
 
       - name: Albedo_Avg
         description: >
-          Surface albedo (0–1 scale).
+          Surface albedo (0–1 scale). Range 0..1 enforced.
           NULL for Era 1, Era 2, and raw_2016_s2 rows.
 
       - name: QatmC_AVG
