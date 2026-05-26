@@ -156,7 +156,11 @@ class TestHealthEndpoint:
         assert body["db_connected"] is True
 
     def test_db_connected_false_when_no_pool(self):
-        with patch("api.main._pool", None):
+        # Force lifespan's pool-creation to fail so _pool stays None even when
+        # a real Postgres is reachable from the test environment.
+        with patch("api.main.psycopg2.pool.ThreadedConnectionPool",
+                   side_effect=RuntimeError("no DB")), \
+             patch("api.main._pool", None):
             with TestClient(app) as c:
                 resp = c.get("/health")
         assert resp.status_code == 200
@@ -243,8 +247,12 @@ class TestSilverGoldEndpoints:
 
 class TestNoDatabaseAvailable:
     def test_returns_503_when_pool_is_none(self):
-        # No dependency override — _get_conn will raise 503 because _pool is None
-        with patch("api.main._pool", None):
+        # No dependency override — _get_conn will raise 503 because _pool is None.
+        # Force lifespan's pool-creation to fail so the patch survives even
+        # when a real Postgres is reachable from the test environment.
+        with patch("api.main.psycopg2.pool.ThreadedConnectionPool",
+                   side_effect=RuntimeError("no DB")), \
+             patch("api.main._pool", None):
             with TestClient(app, raise_server_exceptions=False) as c:
                 resp = c.get("/bronze/years")
         assert resp.status_code == 503

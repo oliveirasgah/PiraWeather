@@ -35,6 +35,12 @@ _st_mock.cache_data.side_effect = _passthrough_decorator
 _st_mock.cache_resource.side_effect = _passthrough_decorator
 # dashboard/app.py does: tab_bronze, tab_analytics = st.tabs([...])
 _st_mock.tabs.return_value = (MagicMock(), MagicMock())
+# … and: col1, col2, col3 = st.columns(3) — return enough mocks for any N.
+_st_mock.columns.side_effect = lambda n, *_, **__: tuple(MagicMock() for _ in range(n))
+# UI selectors return a SQL-safe identifier so that the dashboard's import-time
+# fetch_bronze_sample(selected_table) call survives. Tests that need other
+# values can patch app.st.selectbox locally.
+_st_mock.selectbox.return_value = "raw_2020"
 
 sys.modules["streamlit"] = _st_mock
 sys.modules["plotly"] = MagicMock()
