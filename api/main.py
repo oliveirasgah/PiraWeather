@@ -98,7 +98,7 @@ def _fetch_rows(
         if cur.fetchone() is None:
             raise HTTPException(404, detail=f"Table {schema}.{table} not found")
         cur.execute(
-            f'SELECT * FROM {schema}."{table}" LIMIT %s OFFSET %s',
+            f'SELECT * FROM {schema}."{table}" LIMIT %s OFFSET %s',  # nosec B608 - schema is route-fixed; table validated by _valid_identifier
             (limit, offset),
         )
         cols = [desc[0] for desc in cur.description]
@@ -128,7 +128,7 @@ def bronze_stats(conn: DB):
     stats = []
     with conn.cursor() as cur:
         for table in tables:
-            cur.execute(f'SELECT COUNT(*) FROM bronze."{table}"')
+            cur.execute(f'SELECT COUNT(*) FROM bronze."{table}"')  # nosec B608 - table sourced from information_schema in _list_tables
             stats.append({"table": table, "rows": cur.fetchone()[0]})
     return {"tables": stats}
 

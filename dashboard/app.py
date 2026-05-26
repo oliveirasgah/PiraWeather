@@ -6,6 +6,8 @@ Tab 2 — Analytics: silver/gold layer data served via the API (empty until
          dbt models are implemented).
 """
 
+import re
+
 import pandas as pd
 import plotly.express as px
 import psycopg2
@@ -78,18 +80,26 @@ def fetch_bronze_stats() -> pd.DataFrame:
     rows = []
     with conn.cursor() as cur:
         for table in tables:
-            cur.execute(f'SELECT COUNT(*) FROM bronze."{table}"')
+            cur.execute(f'SELECT COUNT(*) FROM bronze."{table}"')  # nosec B608 - table sourced from information_schema above
             rows.append({"table": table, "rows": cur.fetchone()[0]})
     return pd.DataFrame(rows)
 
 
+_VALID_IDENT = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+
 @st.cache_data(ttl=300)
 def fetch_bronze_sample(table: str, limit: int = 500) -> pd.DataFrame:
+    # Defense-in-depth: the UI selectbox already constrains `table` to names
+    # pulled from information_schema, but the function is also reachable from
+    # tests and internal scripts. Reject anything that isn't a SQL-safe ident.
+    if not isinstance(table, str) or not _VALID_IDENT.match(table):
+        raise ValueError(f"Invalid table identifier: {table!r}")
     conn = get_conn()
     if conn is None:
         return pd.DataFrame()
     with conn.cursor() as cur:
-        cur.execute(f'SELECT * FROM bronze."{table}" LIMIT %s', (limit,))
+        cur.execute(f'SELECT * FROM bronze."{table}" LIMIT %s', (limit,))  # nosec B608 - table validated by _VALID_IDENT regex above
         cols = [desc[0] for desc in cur.description]
         return pd.DataFrame(cur.fetchall(), columns=cols)
 

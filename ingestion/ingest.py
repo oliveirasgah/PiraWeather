@@ -142,11 +142,29 @@ def _write_table(cur, table_name: str, df: pd.DataFrame) -> None:
 #
 
 
+def _validate_year(year) -> int:
+    """Reject anything that isn't a plain int in [FIRST_YEAR, current_year + 1].
+
+    Defense-in-depth: argparse already enforces ``type=int`` from the CLI, but
+    the function is also reachable from Python. A non-int year would be
+    interpolated into both ``SOURCE_URL`` and the bronze table name, so the
+    bound is also our guarantee that ``raw_{year}`` is a safe SQL identifier.
+    """
+    # bool is a subclass of int — treat True/False as invalid.
+    if isinstance(year, bool) or not isinstance(year, int):
+        raise ValueError(f"year must be an int, got {type(year).__name__}: {year!r}")
+    upper = date.today().year + 1
+    if year < FIRST_YEAR or year > upper:
+        raise ValueError(f"year {year} outside [{FIRST_YEAR}, {upper}]")
+    return year
+
+
 def ingest_year(
     con: psycopg2.extensions.connection,
     year: int,
     force: bool,
 ) -> None:
+    year = _validate_year(year)
     current_year = date.today().year
     url = SOURCE_URL.format(year=year)
     tables = ["raw_2016_s1", "raw_2016_s2"] if year == 2016 else [f"raw_{year}"]
