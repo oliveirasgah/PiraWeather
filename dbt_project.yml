@@ -5,7 +5,10 @@ config-version: 2
 profile: piraweather
 
 model-paths: ["models"]
-test-paths: ["tests"]
+# tests/ also holds Python pytest files; point dbt at a dedicated subdir so
+# its glob doesn't pick up .sql files unintentionally and so the two test
+# kinds stay visually separated.
+test-paths: ["tests/dbt_singular"]
 macro-paths: ["macros"]
 seed-paths: ["seeds"]
 
