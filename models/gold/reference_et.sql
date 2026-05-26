@@ -30,15 +30,20 @@ intermediates AS (
 ),
 
 et AS (
+  -- Clamp to 0: PM can yield small negative numbers on low-Rn days, which
+  -- are unphysical; FAO-56 treats ET0 as a non-negative quantity.
   SELECT
     obs_date,
     precip_mm,
     inputs_complete,
-    (
-      0.408 * delta_kpa_c * rn_mj_m2_day
-      + gamma_kpa_c * (900.0 / (t_mean_c + 273.0)) * u2_m_s * (es_kpa - ea_kpa)
-    ) / (
-      delta_kpa_c + gamma_kpa_c * (1.0 + 0.34 * u2_m_s)
+    GREATEST(
+      (
+        0.408 * delta_kpa_c * rn_mj_m2_day
+        + gamma_kpa_c * (900.0 / (t_mean_c + 273.0)) * u2_m_s * (es_kpa - ea_kpa)
+      ) / (
+        delta_kpa_c + gamma_kpa_c * (1.0 + 0.34 * u2_m_s)
+      ),
+      0
     ) AS et0_mm_day
   FROM intermediates
 )
